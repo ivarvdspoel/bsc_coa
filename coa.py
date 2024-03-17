@@ -46,18 +46,17 @@ class COA:
         i = 0
 
         while i < self.population_size:
-            new_pack_size = random.randint(1, self.max_pack_size)
+            new_pack_size = random.randint(5,10)# Paper has hard values init popsize [5,10] #(1, self.max_pack_size)
             if (new_pack_size > self.population_size - i):
                 new_pack_size = self.population_size - i
             i += new_pack_size
             
             pack = self.Pack()
-            for _ in range(random.randint(1, new_pack_size)):
+            for _ in range(new_pack_size):
                 initial_social_condition = [(self.lb + np.random.uniform(0,1)*(self.ub-self.lb)) for _ in range(self.dimension)]
                 pack.coyotes.append(self.Coyote(initial_social_condition))
             self.world.append(pack)
         
-
 
     def verify_adaptation(self, problem):
         for p in self.world:
@@ -90,12 +89,13 @@ class COA:
         delta_1 = [(pack.alpha.social_condition[i] - pack.coyotes[cr_1].social_condition[i]) for i in range(self.dimension)]
         delta_2 = [(pack.social_tendency[i] - pack.coyotes[cr_2].social_condition[i]) for i in range(self.dimension)]
 
-        print("old: ", c.social_condition)
-
         new_social_condition = [(c.social_condition[i] + self.r_1*delta_1[i] + self.r_2*delta_2[i]) for i in range(self.dimension)]
 
-
-        print("new: ", new_social_condition)
+        for i  in range(dimension):
+            if new_social_condition[i] < self.lb:
+                new_social_condition[i] = self.lb
+            elif new_social_condition[i] > self.ub:
+                new_social_condition[i] = self.ub
 
         new_fitness = problem(new_social_condition)
 
@@ -103,24 +103,26 @@ class COA:
             c.social_condition = new_social_condition
             c.obj_value = new_fitness
 
-    def transition(self):
+
+    def transition(self): #Check if it can exceed self.max_pack_size of 14, Make sure P_e 0.005 is decided through max_pack_size
         for p in self.world:
             for c in p.coyotes:
                 N_c = len(p.coyotes)
                 P_e = 0.005*N_c*N_c
-                if (P_e < np.random.uniform(0,1)):
+                chance = np.random.uniform(0,1)
+                if (P_e > chance):
                    
                     p.coyotes.remove(c)
                     if (len(p.coyotes) == 0):
                         self.world.remove(p)
 
-                    new_pack_nr = random.randint(0, len(self.world))
-                    if (new_pack_nr == len(self.world)):
+                    new_pack_nr = random.randint(0, len(self.world ) - 1)
+                    if (len(self.world[new_pack_nr].coyotes) < self.max_pack_size):
+                        self.world[new_pack_nr].coyotes.append(c)
+                    else:
                         new_pack = self.Pack()
                         new_pack.coyotes.append(c)
                         self.world.append(new_pack)
-                    else:
-                        self.world[new_pack_nr].coyotes.append(c)
 
 
 
@@ -151,8 +153,8 @@ class COA:
                 omega.append(c)
 
         if (phi == 1):
-            pack.coyotes = []
-            pack.coyotes.append(self.Coyote(pup_social_condition))
+            pack.coyotes[0] = self.Coyote(pup_social_condition)
+            #pack.coyotes.append(self.Coyote(pup_social_condition))
         elif (phi > 1):
             if (len(omega) > 0):
                 oldest_coyote = omega[0]
@@ -160,7 +162,7 @@ class COA:
                     if (c.age > oldest_coyote.age):
                         oldest_coyote = c
                 pack.coyotes.remove(oldest_coyote)
-            pack.coyotes.append(self.Coyote(pup_social_condition))
+                pack.coyotes.append(self.Coyote(pup_social_condition))
 
 
     def update_age(self):
@@ -179,7 +181,7 @@ class COA:
 
         print(best_coyote.social_condition)
         return best_coyote_fitness
-    
+
     def __call__(self, problem: ioh.ProblemType):
         """Optimize the given problem using the COA algorithm"""
 
@@ -192,7 +194,6 @@ class COA:
         # main loop
         for _ in range(self.max_iterations):
 
-            #for each pack p
             for pack in self.world:
 
                 # define alpha coyote
@@ -212,7 +213,6 @@ class COA:
 
             self.update_age()
 
-
         return self.best_coyote_fitness()
 
 
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     ub = 1
     dimension = 5
     population_size = 100
-    iterations = 5
+    iterations = 10000
     seed = 42
     problem = get_problem(24, 1, dimension, ProblemClass.BBOB)
     alg = COA(dimension, population_size, iterations, seed, lb, ub)
