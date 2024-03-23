@@ -5,6 +5,8 @@ import ioh
 import random
 import numpy as np
 
+INT_MAX = 2147483647
+
 class COA:
     """Class for the Coyote Optimization Algorithm"""
     
@@ -13,7 +15,7 @@ class COA:
         def __init__(self, social_condition):
             self.age = 0
             self.social_condition = social_condition
-            self.obj_value = 0
+            self.obj_value = INT_MAX
         
     class Pack:
         """Class for the pack of coyotes"""
@@ -53,7 +55,7 @@ class COA:
             
             pack = self.Pack()
             for _ in range(new_pack_size):
-                initial_social_condition = [(self.lb + np.random.uniform(0,1)*(self.ub-self.lb)) for _ in range(self.dimension)]
+                initial_social_condition = [(self.lb[i] + np.random.uniform(0,1)*(self.ub[i]-self.lb[i])) for i in range(self.dimension)]
                 pack.coyotes.append(self.Coyote(initial_social_condition))
             self.world.append(pack)
         
@@ -92,14 +94,14 @@ class COA:
         new_social_condition = [(c.social_condition[i] + self.r_1*delta_1[i] + self.r_2*delta_2[i]) for i in range(self.dimension)]
 
         for i  in range(dimension):
-            if new_social_condition[i] < self.lb:
-                new_social_condition[i] = self.lb
-            elif new_social_condition[i] > self.ub:
-                new_social_condition[i] = self.ub
+            if new_social_condition[i] < self.lb[i]:
+                new_social_condition[i] = self.lb[i]
+            elif new_social_condition[i] > self.ub[i]:
+                new_social_condition[i] = self.ub[i]
 
         new_fitness = problem(new_social_condition)
 
-        if new_fitness > c.obj_value:
+        if new_fitness < c.obj_value:
             c.social_condition = new_social_condition
             c.obj_value = new_fitness
 
@@ -141,7 +143,7 @@ class COA:
             elif (rnd_j >= self.P_s + self.P_a or j == j_2):
                 pup_social_condition[j] = pack.coyotes[r_2].social_condition[j]
             else:
-                pup_social_condition[j] = (random.uniform(lb,ub))
+                pup_social_condition[j] = (random.uniform(self.lb[j],self.ub[j]))
 
         pup_fitness = problem(pup_social_condition)
 
@@ -149,7 +151,7 @@ class COA:
         omega = []
 
         for c in pack.coyotes:
-            if (c.obj_value < pup_fitness):
+            if (c.obj_value > pup_fitness):
                 omega.append(c)
 
         if (phi == 1):
@@ -175,7 +177,7 @@ class COA:
         best_coyote = self.world[0].coyotes[0]
         for pack in self.world:
             for coyote in pack.coyotes:
-                if coyote.obj_value > best_coyote_fitness:
+                if coyote.obj_value < best_coyote_fitness:
                     best_coyote_fitness = coyote.obj_value
                     best_coyote = coyote
 
@@ -218,13 +220,18 @@ class COA:
 
 
 if __name__ == '__main__':
-    lb = 0
-    ub = 1
     dimension = 5
     population_size = 100
+
     iterations = 10000
+
     seed = 42
-    problem = get_problem(24, 1, dimension, ProblemClass.BBOB)
+    
+    problem = get_problem(22, 1, dimension, ProblemClass.BBOB)
+    
+    print(problem.optimum)
+    lb = problem.bounds.lb
+    ub = problem.bounds.ub
     alg = COA(dimension, population_size, iterations, seed, lb, ub)
     #logger = ioh.logger.Analyzer(algorithm_name="COA", folder_name="COA")
     #problem.attach_logger()
