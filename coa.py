@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-from ioh import get_problem, ProblemClass, ProblemType
+from ioh import ProblemType
 import ioh
 import random
 import numpy as np
-
-INT_MAX = 2147483647
 
 class COA:
     """Class for the Coyote Optimization Algorithm"""
@@ -15,7 +13,7 @@ class COA:
         def __init__(self, social_condition):
             self.age = 0
             self.social_condition = social_condition
-            self.obj_value = INT_MAX
+            self.obj_value = float('inf')
         
     class Pack:
         """Class for the pack of coyotes"""
@@ -93,7 +91,7 @@ class COA:
 
         new_social_condition = [(c.social_condition[i] + self.r_1*delta_1[i] + self.r_2*delta_2[i]) for i in range(self.dimension)]
 
-        for i  in range(dimension):
+        for i  in range(self.dimension):
             if new_social_condition[i] < self.lb[i]:
                 new_social_condition[i] = self.lb[i]
             elif new_social_condition[i] > self.ub[i]:
@@ -129,14 +127,14 @@ class COA:
 
 
     def birth_and_death(self, problem, pack):
-        j_1 = random.randint(0, dimension - 1)
-        j_2 = random.randint(0, dimension - 1)
+        j_1 = random.randint(0, self.dimension - 1)
+        j_2 = random.randint(0, self.dimension - 1)
 
         r_1 = random.randint(0, len(pack.coyotes) - 1)
         r_2 = random.randint(0, len(pack.coyotes) - 1)
 
-        pup_social_condition = [0 for _ in range(dimension)]
-        for j in range(dimension):
+        pup_social_condition = [0 for _ in range(self.dimension)]
+        for j in range(self.dimension):
             rnd_j = random.uniform(0,1)
             if (rnd_j < self.P_s or j == j_1):
                 pup_social_condition[j] = pack.coyotes[r_1].social_condition[j]
@@ -216,28 +214,3 @@ class COA:
             self.update_age()
 
         return self.best_coyote_fitness()
-
-
-
-if __name__ == '__main__':
-    dimension = 5
-    population_size = 100
-
-    iterations = 10000
-
-    seed = 42
-    
-    problem = get_problem(22, 1, dimension, ProblemClass.BBOB)
-    
-    print(problem.optimum)
-    lb = problem.bounds.lb
-    ub = problem.bounds.ub
-    alg = COA(dimension, population_size, iterations, seed, lb, ub)
-    #logger = ioh.logger.Analyzer(algorithm_name="COA", folder_name="COA")
-    #problem.attach_logger()
-
-    opti = alg(problem)
-    print(opti)
-    #logger.close()
-    exit(0)
-    
