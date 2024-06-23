@@ -1,12 +1,14 @@
 import numpy as np
 
+
 class RandomSearch:
-    def __init__(self, dimension, iterations, seed, lb, ub):
-        self.dimension = dimension
-        self.iterations = iterations
-        self.seed = seed
-        self.lb = lb
-        self.ub = ub
+    def __init__(self, problem, budget=None):
+        self.dimension = problem.meta_data.n_variables
+        self.iterations = 1000000
+        self.seed = 42
+        self.lb = problem.bounds.lb
+        self.ub = problem.bounds.ub
+        self.__call__(problem)
     
     def __call__(self, problem):
         np.random.seed(self.seed)
