@@ -35,7 +35,9 @@ class COA:
         
         self.P_e = P_e
             
-        
+        if budget is not None:
+            self.budget = budget
+
         self.initial_pack_size = initial_pack_size
     
 
@@ -78,6 +80,12 @@ class COA:
         for p in self.world:
             for c in p.coyotes:
                 c.obj_value = problem(c.social_condition)
+                if self.budget is not None:
+                    self.budget -= 1
+                    if self.budget == 0:
+                        return
+
+
 
     def calculate_alpha_coyote(self, pack):
         if (len(pack.coyotes) == 0):
@@ -135,6 +143,10 @@ class COA:
 
         # Calculate new fitness
         new_fitness = problem(new_social_condition)
+        if self.budget is not None:
+            self.budget -= 1
+            if self.budget == 0:
+                return
 
         # Adaptation
         if new_fitness < c.obj_value:
@@ -226,6 +238,10 @@ class COA:
 
         # Calculate fitness of the pup
         pup_fitness = problem(pup_social_condition)
+        if self.budget is not None:
+            self.budget -= 1
+            if self.budget == 0:
+                return
 
 
         phi = len(pack.coyotes)
@@ -291,6 +307,8 @@ class COA:
 
         # calculate objective function for each coyote (social condition)
         self.verify_adaptation(problem)
+        if self.budget == 0:
+            return self.best_coyote().obj_value
 
         # main loop
 
@@ -309,9 +327,13 @@ class COA:
                 for coyote in pack.coyotes:
                     # update
                     self.update(problem, coyote, pack)
+                    if self.budget == 0:
+                        return self.best_coyote().obj_value
                     
                 # birth and death
                 self.birth_and_death(problem, pack)
+                if self.budget == 0:
+                    return self.best_coyote().obj_value
             
             # transition
             self.transition_evenly()
